@@ -1,0 +1,60 @@
+= simple_form_for @user, :validate => true do |f|
+	fieldset 
+		legend Sign Up
+		= f.input :name, :placeholder => "name", :required => "required"
+		= f.input :birth_date, :placeholder => "birth date", :type => "date", :required => "required", input_html: {"cda-data-type" => "date"}
+		= f.input :email, :placeholder => "email", :required => "required", input_html: {"cda-data-type" => 'email', "cda-confirmation-field" => 'user_email_confirmation'}
+		= f.input :password, :placeholder => "password", :type => "password", :required => "required", input_html: {"cda-confirmation-field" => 'user_password_confirmation'}
+		= f.input :password_confirmation, :placeholder => "password confirm", :type => "password", :required => "required"
+		.individual
+			= f.label :switch_to
+			= content_tag("a"," legal entity", :id => :individual)
+			= f.input :cpf, :placeholder => "cpf", :required => "required", input_html: {"cda-data-type" => 'cpf'}
+			= f.input :gender, collection: ["male", "female"], prompt: "Select your gender"
+		.legal_entity
+			= f.label :switch_to
+			= content_tag("a"," individual", :id => :legal_entity)
+			= f.input :cnpj, :placeholder => "cnpj", :required => "required", input_html: {"cda-data-type" => 'cnpj'}
+			= f.input :state_registration, :required => "required"
+		= f.input :phone, :pattern => "[\+]\d{2}[\(]\d{2}[\)]\d{4}[\-]\d{4}", :required => "required", :placeholder => "telephone", input_html: {"cda-data-type" => "phone"}
+		= f.input :cell_phone, :pattern => "[\+]\d{2}[\(]\d{2}[\)]\d{4}[\-]\d{4}", :required => "required", :placeholder => "mobile", input_html: {"cda-data-type" => "mobile"}
+		= f.input :country, collection: ["Brazil", "Conchinchina"], prompt: "Select a contry"
+		= f.input :state, collection: ["São Paulo", "Santa Catarina"], prompt: "Select a state"
+		= f.input :city, collection: ["Joinville", "São Paulo"], prompt: "Select a city"
+		= f.input :cep, :placeholder => "cep", :required => "required", input_html: {"cda-data-type" => "cep"}
+		= f.input :address, :placeholder => "address", :required => "required"
+		= f.input :number, :placeholder => "number", :required => "required", :type => "number", input_html: {"cda-data-type" => "number"}
+		= f.input :complement, :placeholder => "complement"
+		= f.input :neighborhood, :placeholder => "neighborhood", :required => "required"
+		= f.label :options
+		= f.check_box :terms_of_service, {}, true, false
+		= f.label :terms_of_service, "Service terms"
+		= f.check_box :newsletter, {}, true, false
+		= f.label :newsletter, "Newsletter"
+		= f.check_box :sign_up_as_author, {}, true, false
+		= f.label :sign_up_as_author, "Author"
+		.actions 
+			= f.submit 'Sign Up'
+
+
+javascript:
+  UIValidation.addCustomValidation($('#user_email')[0], function(errors){
+  	errors = UIValidation.filterErrors(errors);
+  	if (errors.length > 0 )
+  		return; 
+  	var email = this.value;
+    var link = "/users/check_mail"
+    var error;
+    $.ajax({
+	    url: link,
+	    dataType: 'json',
+	    data: {email: email},
+	    async: false,
+	    success: function(data) {
+	    	if ($.isArray(data.entity_memberships)) {
+	    		error = 'Email já cadastrado em ' + data.entity_memberships.join(', ') + '.';
+	    	}
+	    }
+    });
+    return error;
+  });

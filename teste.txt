@@ -1,0 +1,149 @@
+$ ->	
+	emailRegEx = new RegExp(/^((?!\.)[a-z0-9._%+-]+(?!\.)\w)@[a-z0-9-]+\.[a-z.]{1,5}(?!\.)\w$/i)
+	emptyRegEx = new RegExp(/[-_.a-zA-Z0-9]{3,}/)
+	numberRegEx = new RegExp(/^[0-9]{3,}$/)
+	postalCodeRegEx = new RegExp(/^[A-Z]{1}[0-9]{1}[A-Z]{1} [0-9]{1}[A-Z]{1}[0-9]{1}/)
+	class UIValidation
+		@invalidFormat: 'invalidFormat'
+
+		constructor: () ->
+		@setValidations: () -> 
+			$("input[data_type='email']").blur ->
+				UIValidation.validateEmail(@)
+			$("input[data_type='cpf']").blur ->
+				UIValidation.validateCpf(@)
+			$("input[data_type='cnpj']").blur ->
+				UIValidation.validateCnpj(@)
+			#validacao de required deve ficar por ultimo
+			$(".required :input").blur ->
+				UIValidation.validateBlankField(@)
+		@validateEmail: (e) ->
+      unless @validateBlankField(e)
+        @setMessageToErrorField(e, @invalidFormat)
+			unless emailRegEx.test($(e).val())
+				@setMessageToErrorField(e, @invalidFormat)
+		@validateCpf: (e) ->
+			unless @cpfIsValid(e)
+				@setMessageToErrorField(e, @invalidFormat)
+		@validateCnpj: (e) ->
+			unless @cnpjIsValid(e)
+				@setMessageToErrorField(e, @invalidFormat)
+		@validateBlankField: (e) ->
+			unless emptyRegEx.test($(e).val())
+				@setMessageToErrorField(e, 'required')
+		@setMessageToErrorField: (e, message) ->
+			parent = $(e).parents('.input')
+			parent.find('span').remove()
+			parent.addClass("field_with_errors").append($("<span>").addClass("error").text(message))
+			
+		@cnpjIsValid: (e) ->
+    	cnpj = $(e).val().replace(/[^\d]+/g, "")
+    	return false  if cnpj is ""
+    	return false  unless cnpj.length is 14
+    
+    	# Elimina CNPJs invalidos conhecidos
+    	return false  if cnpj is "00000000000000" or cnpj is "11111111111111" or cnpj is "22222222222222" or cnpj is "33333333333333" or cnpj is "44444444444444" or cnpj is "55555555555555" or cnpj is "66666666666666" or cnpj is "77777777777777" or cnpj is "88888888888888" or cnpj is "99999999999999"
+    
+    	# Valida DVs
+    	tamanho = cnpj.length - 2
+    	numeros = cnpj.substring(0, tamanho)
+    	digitos = cnpj.substring(tamanho)
+    	soma = 0
+    	pos = tamanho - 7
+    	i = tamanho
+    	while i >= 1
+      	soma += numeros.charAt(tamanho - i) * pos--
+      	pos = 9  if pos < 2
+      	i--
+    	resultado = (if soma % 11 < 2 then 0 else 11 - soma % 11)
+    	return false  unless resultado is digitos.charAt(0)
+    	tamanho = tamanho + 1
+    	numeros = cnpj.substring(0, tamanho)
+    	soma = 0
+    	pos = tamanho - 7
+    	i = tamanho
+    	while i >= 1
+      	soma += numeros.charAt(tamanho - i) * pos--
+      	pos = 9  if pos < 2
+      	i--
+	    resultado = (if soma % 11 < 2 then 0 else 11 - soma % 11)
+	    return false  unless resultado is digitos.charAt(1)
+    	true
+		@cpfIsValid: (e) ->
+  		cpf = $(e).val().replace(/[^\d]+/g, "")
+  		return false  if cpf is ""
+  
+  		# Elimina CPFs invalidos conhecidos
+  		return false  if cpf.length isnt 11 or cpf is "00000000000" or cpf is "11111111111" or cpf is "22222222222" or cpf is "33333333333" or cpf is "44444444444" or cpf is "55555555555" or cpf is "66666666666" or cpf is "77777777777" or cpf is "88888888888" or cpf is "99999999999"
+  
+ 			# Valida 1o digito
+  		add = 0
+  		i = 0
+  		while i < 9
+    		add += parseInt(cpf.charAt(i)) * (10 - i)
+    		i++
+  		rev = 11 - (add % 11)
+  		rev = 0  if rev is 10 or rev is 11
+  		return false  unless rev is parseInt(cpf.charAt(9))
+  
+  		# Valida 2o digito
+  		add = 0
+  		i = 0
+  		while i < 10
+    		add += parseInt(cpf.charAt(i)) * (11 - i)
+    		i++
+  		rev = 11 - (add % 11)
+  		rev = 0  if rev is 10 or rev is 11
+  		return false  unless rev is parseInt(cpf.charAt(10))
+  		true
+	UIValidation.setValidations()
+
+
+
+
+
+  ##################################################
+
+
+
+      @types:
+      invalidFormat: 'invalidFormat'
+      required: 'required'
+    @validate: 
+      @email: (e) ->
+        return @types.invalidFormat unless emailRegEx.test($(e).val())
+      @validateEmail: (e) ->
+        unless emailRegEx.test($(e).val())
+          @setMessageToErrorField(e, @types.invalidFormat)
+      @validateCpf: (e) ->
+        unless @cpfIsValid(e)
+          @setMessageToErrorField(e, @types.invalidFormat)
+      @validateCnpj: (e) ->
+        unless @cnpjIsValid(e)
+          @setMessageToErrorField(e, @types.invalidFormat)
+      @validateBlankField: (e) ->
+        unless emptyRegEx.test($(e).val())
+          @setMessageToErrorField(e, 'required')
+    constructor: () ->
+    @setValidations: () -> 
+      $(":input").blur ->
+        errors = []
+        parent = $(@).parents('.input')
+        if parent.hasClass("required")
+          errors.push(@types.required)
+        else
+          errors.push(UIValidation.validate[$(@).attr('data_type')]?(@))
+          #Outras validações
+
+        @setMessageToErrorField(@, errors)
+
+
+    @setMessageToErrorField: (e, errors) ->
+      errors.filter (error) ->
+        return !!error
+
+      parent = $(e).parents('.input')
+      parent.find('span').remove()
+      parent.addClass("field_with_errors").append($("<span>").addClass("error").text(message))
+      
+  UIValidation.setValidations()
